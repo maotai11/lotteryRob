@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客製化抽獎機器人</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #e74c3c;
+        }
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 100%;
+        }
+        button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #c0392b;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            display: none;
+        }
+        #participantsList, #winnersList {
+            margin: 10px 0;
+        }
+        .loading {
+            text-align: center;
+            margin: 20px 0;
+            display: none;
+        }
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+            80%, 100% { content: ''; }
+        }
+        .winner {
+            font-weight: bold;
+            color: #e74c3c;
+            font-size: 18px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>客製化抽獎機器人</h1>
+        
+        <div class="input-group">
+            <label for="participants">請輸入參與抽獎對象 (每行一個名稱):</label>
+            <textarea id="participants" placeholder="例如:
+張小明
+李大華
+王美麗"></textarea>
+        </div>
+        
+        <div class="input-group">
+            <label for="prize">獎項名稱:</label>
+            <input type="text" id="prize" placeholder="例如: 一等獎">
+        </div>
+        
+        <div class="input-group">
+            <label for="numWinners">獲獎人數:</label>
+            <input type="number" id="numWinners" min="1" value="1">
+        </div>
+        
+        <button id="startLottery">開始抽獎</button>
+        
+        <div class="loading">
+            抽獎中<span class="loading-dots"></span>
+        </div>
+        
+        <div id="result">
+            <h3>抽獎結果</h3>
+            <div>
+                <strong>參與者:</strong>
+                <div id="participantsList"></div>
+            </div>
+            <div>
+                <strong>獎項:</strong> <span id="prizeDisplay"></span>
+            </div>
+            <div>
+                <strong>獲獎者:</strong>
+                <div id="winnersList"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('startLottery').addEventListener('click', function() {
+            // 獲取輸入
+            const participantsText = document.getElementById('participants').value.trim();
+            const prize = document.getElementById('prize').value.trim() || '獎項';
+            const numWinners = parseInt(document.getElementById('numWinners').value);
+            
+            // 驗證輸入
+            if (!participantsText) {
+                alert('請輸入參與抽獎的對象！');
+                return;
+            }
+            
+            // 處理參與者名單
+            const participants = participantsText.split('\n')
+                .map(name => name.trim())
+                .filter(name => name.length > 0);
+            
+            if (participants.length === 0) {
+                alert('請輸入至少一個有效的參與者！');
+                return;
+            }
+            
+            if (numWinners <= 0) {
+                alert('獲獎人數必須大於 0！');
+                return;
+            }
+            
+            if (numWinners > participants.length) {
+                alert(`獲獎人數不能超過參與者總數 (${participants.length})！`);
+                return;
+            }
+            
+            // 顯示加載動畫
+            document.querySelector('.loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            
+            // 模擬抽獎過程
+            setTimeout(function() {
+                // 隱藏加載動畫
+                document.querySelector('.loading').style.display = 'none';
+                
+                // 抽取獲獎者
+                const winners = getRandomWinners(participants, numWinners);
+                
+                // 顯示結果
+                displayResults(participants, prize, winners);
+            }, 2000); // 延遲 2 秒模擬抽獎過程
+        });
+        
+        // 從參與者中隨機抽取獲獎者
+        function getRandomWinners(participants, numWinners) {
+            // 複製參與者數組，避免修改原數組
+            const participantsCopy = [...participants];
+            const winners = [];
+            
+            for (let i = 0; i < numWinners; i++) {
+                // 隨機選擇一個索引
+                const randomIndex = Math.floor(Math.random() * participantsCopy.length);
+                // 添加到獲獎者列表
+                winners.push(participantsCopy[randomIndex]);
+                // 從參與者列表中移除
+                participantsCopy.splice(randomIndex, 1);
+            }
+            
+            return winners;
+        }
+        
+        // 顯示抽獎結果
+        function displayResults(participants, prize, winners) {
+            // 顯示參與者
+            const participantsList = document.getElementById('participantsList');
+            participantsList.innerHTML = '';
+            participants.forEach(participant => {
+                const div = document.createElement('div');
+                div.textContent = participant;
+                participantsList.appendChild(div);
+            });
+            
+            // 顯示獎項
+            document.getElementById('prizeDisplay').textContent = prize;
+            
+            // 顯示獲獎者
+            const winnersList = document.getElementById('winnersList');
+            winnersList.innerHTML = '';
+            winners.forEach((winner, index) => {
+                const div = document.createElement('div');
+                div.className = 'winner';
+                div.textContent = `${index + 1}. ${winner}`;
+                winnersList.appendChild(div);
+            });
+            
+            // 顯示結果區域
+            document.getElementById('result').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
